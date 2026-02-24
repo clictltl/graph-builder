@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useProjectStore } from '../../shared/stores/projectStore';
-import CategoryColumn from './CategoryColumn.vue';
-import PropertiesPanel from './PropertiesPanel.vue'; // <--- Import novo
+import { useProjectStore } from '@/shared/stores/projectStore';
+import CategoryColumn from '@/editor/components/board/CategoryColumn.vue';
+import PropertiesPanel from '@/editor/components/panels/PropertiesPanel.vue';
 
 const store = useProjectStore();
 

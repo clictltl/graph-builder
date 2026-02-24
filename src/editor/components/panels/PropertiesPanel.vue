@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useProjectStore } from '../../shared/stores/projectStore';
+import { useProjectStore } from '@/shared/stores/projectStore';
 
 const store = useProjectStore();
 

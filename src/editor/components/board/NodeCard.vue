@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Node } from '../../shared/types';
-import { useProjectStore } from '../../shared/stores/projectStore';
+import type { Node } from '@/shared/types';
+import { useProjectStore } from '@/shared/stores/projectStore';
 
 // Recebe o objeto "Node" inteiro como propriedade
 const props = defineProps<{

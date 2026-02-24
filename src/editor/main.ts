@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import './style.css' // (Opcional: pode manter ou apagar se quiser limpar o CSS padrão)
+import './style.css'
 import App from './App.vue'
 
 const app = createApp(App)

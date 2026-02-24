@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Category } from '../../shared/types';
-import { useProjectStore } from '../../shared/stores/projectStore';
+import type { Category } from '@/shared/types';
+import { useProjectStore } from '@/shared/stores/projectStore';
 import NodeCard from './NodeCard.vue';
 
 const props = defineProps<{

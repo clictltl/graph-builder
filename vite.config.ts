@@ -25,7 +25,14 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       sourcemap: false, // Menor tamanho final
-      // rollupOptions: Não precisamos definir inputs manuais pois é uma SPA padrão
+      rollupOptions: {
+        input: {
+          // O Index é o Editor (padrão ao abrir o site)
+          index: fileURLToPath(new URL('./index.html', import.meta.url)),
+          // O Runtime é um script separado para ser embedado depois
+          runtime: fileURLToPath(new URL('./src/runtime/main.ts', import.meta.url)),
+        },
+      },
     }
   }
 })
