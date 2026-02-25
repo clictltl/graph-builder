@@ -1,139 +1,123 @@
-<!-- src/modules/Preview/GraphView.vue -->
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted, watch } from 'vue';
 import cytoscape from 'cytoscape';
 import { useProjectStore } from '@/shared/stores/projectStore';
 
-const props = defineProps<{
-  activeNodeId?: string; // Opcional, pois no modo global pode não ter foco
-  mode?: 'local' | 'global';
-}>();
+const props = withDefaults(defineProps<{
+  activeNodeId?: string;
+  depth?: number;
+  forceGlobal?: boolean;
+  isExpanded?: boolean;
+}>(), {
+  depth: 1,
+  forceGlobal: false,
+  isExpanded: false
+});
 
 const store = useProjectStore();
 const cyContainer = ref<HTMLElement | null>(null);
 let cyInstance: cytoscape.Core | null = null;
 
-// --- Lógica de Filtro de Dados ---
-
-const getFilteredElements = () => {
-  const allNodes = store.project.nodes;
+// --- 1. Lógica de Tamanho (Grau de Conexão Global) ---
+const getNodeSize = (nodeId: string) => {
   const allEdges = store.project.edges;
-
-  // 1. Se for GLOBAL ou sem ID ativo, retorna tudo
-  if (props.mode === 'global' || !props.activeNodeId) {
-    return [
-      ...allNodes.map(n => mapNodeToCy(n)),
-      ...allEdges.map(e => mapEdgeToCy(e))
-    ];
-  }
-
-  // 2. Se for LOCAL, filtra vizinhos (Profundidade 1)
-  const centerId = props.activeNodeId;
-  
-  // Acha arestas conectadas ao centro
-  const connectedEdges = allEdges.filter(e => 
-    e.source === centerId || e.target === centerId
-  );
-
-  // Acha IDs dos nós vizinhos + o próprio centro
-  const neighborIds = new Set<string>();
-  neighborIds.add(centerId);
-  connectedEdges.forEach(e => {
-    neighborIds.add(e.source);
-    neighborIds.add(e.target);
-  });
-
-  // Filtra os nós finais
-  const filteredNodes = allNodes.filter(n => neighborIds.has(n.id));
-
-  return [
-    ...filteredNodes.map(n => mapNodeToCy(n)),
-    ...connectedEdges.map(e => mapEdgeToCy(e))
-  ];
+  const degree = allEdges.filter(e => e.source === nodeId || e.target === nodeId).length;
+  const baseSize = 20;    
+  const multiplier = 5;   
+  const maxSize = 120;    
+  return Math.min(baseSize + (degree * multiplier), maxSize);
 };
 
-// --- Helpers de Mapeamento ---
-
+// --- 2. Mappers ---
 const mapNodeToCy = (n: any) => {
   const category = store.project.categories.find(c => c.id === n.categoryId);
+  const size = getNodeSize(n.id);
   return {
     data: { 
-      id: n.id, 
-      label: n.title,
-      color: category ? category.color : '#888' 
+      id: n.id, label: n.title, color: category ? category.color : '#94a3b8', size: size 
     },
-    // Trava a posição do nó central no layout local para não "pular" muito
-    // (Opcional, mas ajuda na UX)
     classes: n.id === props.activeNodeId ? 'center-node' : ''
   };
 };
+
 
 const mapEdgeToCy = (e: any) => ({
   data: { id: e.id, source: e.source, target: e.target }
 });
 
-// --- Ciclo de Vida do Cytoscape ---
+// --- 3. Lógica de Profundidade (BFS) ---
+const getFilteredElements = () => {
+  const allNodes = store.project.nodes;
+  const allEdges = store.project.edges;
 
+  if (props.forceGlobal || !props.activeNodeId) {
+    return [...allNodes.map(mapNodeToCy), ...allEdges.map(mapEdgeToCy)];
+  }
+  if (props.depth >= 5) {
+    return [...allNodes.map(mapNodeToCy), ...allEdges.map(mapEdgeToCy)];
+  }
+
+  const startNodeId = props.activeNodeId;
+  const visitedNodes = new Set<string>([startNodeId]);
+  const visibleEdges = new Set<string>();
+  let currentLayer = [startNodeId];
+
+  for (let i = 0; i < props.depth; i++) {
+    const nextLayer: string[] = [];
+    currentLayer.forEach(nodeId => {
+      const connectedEdges = allEdges.filter(e => e.source === nodeId || e.target === nodeId);
+      connectedEdges.forEach(edge => {
+        visibleEdges.add(edge.id);
+        const neighborId = edge.source === nodeId ? edge.target : edge.source;
+        if (!visitedNodes.has(neighborId)) {
+          visitedNodes.add(neighborId);
+          nextLayer.push(neighborId);
+        }
+      });
+    });
+    currentLayer = nextLayer;
+  }
+
+  const finalNodes = allNodes.filter(n => visitedNodes.has(n.id));
+  const finalEdges = allEdges.filter(e => visibleEdges.has(e.id));
+  return [...finalNodes.map(mapNodeToCy), ...finalEdges.map(mapEdgeToCy)];
+};
+
+// --- 4. Renderização ---
 const renderGraph = () => {
   if (!cyContainer.value) return;
 
   const elements = getFilteredElements();
 
-  // Se já existe instância, apenas atualizamos os dados e rodamos o layout
   if (cyInstance) {
     cyInstance.elements().remove();
     cyInstance.add(elements);
-    
-    // Layout diferente dependendo do modo
-    const layoutName = props.mode === 'local' ? 'concentric' : 'cose';
-    
-    cyInstance.layout({
-      name: layoutName,
-      animate: true,
-      animationDuration: 500,
-      padding: 30,
-      // Configs específicas para centralizar o nó ativo
-      ...(layoutName === 'concentric' ? {
-        minNodeSpacing: 50,
-        concentric: (node: any) => {
-          return node.id() === props.activeNodeId ? 2 : 1;
-        },
-        levelWidth: () => 1
-      } : {
-        nodeRepulsion: 450000 // Força de repulsão no modo global
-      })
-    }).run();
-    
+    runLayout();
     return;
   }
 
-  // Primeira Inicialização
   cyInstance = cytoscape({
     container: cyContainer.value,
     elements: elements,
+    minZoom: 0.2,
+    maxZoom: 3,
+    wheelSensitivity: 0.2,
     style: [
       {
         selector: 'node',
         style: {
           'background-color': 'data(color)',
           'label': 'data(label)',
-          'color': '#334155', // Texto escuro para fundo claro
+          'color': '#334155',
           'font-weight': 'bold',
           'text-valign': 'bottom',
           'text-margin-y': 6,
-          'width': '40px',
-          'height': '40px',
-          'font-size': '12px'
-        }
-      },
-      {
-        selector: '.center-node', // Estilo destaque para o nó atual
-        style: {
-          'width': '60px',
-          'height': '60px',
-          'border-width': 4,
-          'border-color': '#3b82f6'
-        }
+          'font-size': '12px',
+          'width': 'data(size)',
+          'height': 'data(size)',
+          'transition-property': 'background-opacity, line-color, target-arrow-color, opacity',
+          'transition-duration': 300
+        } as any
       },
       {
         selector: 'edge',
@@ -142,38 +126,101 @@ const renderGraph = () => {
           'line-color': '#cbd5e1',
           'target-arrow-color': '#cbd5e1',
           'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier'
-        }
+          'curve-style': 'bezier',
+          'transition-property': 'line-color, opacity',
+          'transition-duration': 300
+        } as any
+      },
+      {
+        selector: '.faded',
+        style: { 'opacity': 0.1, 'label': '' } as any
+      },
+      {
+        selector: '.highlight',
+        style: { 'opacity': 1, 'line-color': '#94a3b8', 'target-arrow-color': '#94a3b8', 'z-index': 9999 } as any
+      },
+      {
+        selector: '.center-node',
+        style: { 'border-width': 4, 'border-color': '#2563eb' }
       }
     ]
   });
-  
-  // Rodar layout inicial
-  cyInstance.layout({ name: props.mode === 'local' ? 'concentric' : 'cose' }).run();
 
-  // Clique no nó navega (se não for o ativo)
+  runLayout();
+  setupInteractions();
+};
+
+const runLayout = () => {
+  if (!cyInstance) return;
+  
+  const isLocal = !props.forceGlobal && props.depth === 1 && props.activeNodeId;
+
+  const layoutConfig = isLocal
+    ? {
+        name: 'concentric',
+        animate: true,
+        animationDuration: 500,
+        padding: 30,
+        minNodeSpacing: 60,
+        concentric: (node: any) => node.id() === props.activeNodeId ? 2 : 1,
+        levelWidth: () => 1
+      }
+    : {
+        name: 'cose',
+        animate: true,
+        animationDuration: 500,
+        padding: 30,
+        nodeRepulsion: 450000,
+        idealEdgeLength: 100
+      };
+      
+  cyInstance.layout(layoutConfig as any).run();
+};
+
+const setupInteractions = () => {
+  if (!cyInstance) return;
+
   cyInstance.on('tap', 'node', (evt) => {
     const nodeId = evt.target.id();
     if (nodeId !== props.activeNodeId) {
-      // Aqui precisamos emitir um evento para o pai mudar a seleção
-      // Mas como estamos usando Store, podemos mudar direto ou emitir
       store.selectedNodeId = nodeId;
     }
   });
+
+  cyInstance.on('mouseover', 'node', (e) => {
+    const node = e.target;
+    const neighbors = node.neighborhood();
+    cyInstance?.elements().addClass('faded');
+    node.removeClass('faded').addClass('highlight');
+    neighbors.removeClass('faded').addClass('highlight');
+  });
+
+  cyInstance.on('mouseout', 'node', () => {
+    cyInstance?.elements().removeClass('faded').removeClass('highlight');
+  });
 };
 
-onMounted(() => {
+onMounted(() => renderGraph());
+
+watch(() => [props.activeNodeId, props.depth, props.forceGlobal], () => {
   renderGraph();
 });
 
-// Observa mudanças nas props para redesenhar
-watch(() => [props.activeNodeId, props.mode], () => {
-  renderGraph();
+watch(() => props.isExpanded, () => {
+  setTimeout(() => {
+    if (cyInstance) {
+      cyInstance.resize();
+      cyInstance.animate({
+        fit: {
+          eles: cyInstance.elements(),
+          padding: 50
+        }
+      }, { duration: 500 });
+    }
+  }, 350);
 });
 
-onUnmounted(() => {
-  if (cyInstance) cyInstance.destroy();
-});
+onUnmounted(() => { if (cyInstance) cyInstance.destroy(); });
 </script>
 
 <template>
@@ -186,14 +233,8 @@ onUnmounted(() => {
 .graph-wrapper {
   width: 100%;
   height: 100%;
-  /* Fundo claro agora para combinar com o modo "Documento" */
-  background-color: #f8fafc; 
+  background-color: #f8fafc;
   position: relative;
 }
-
-.cy-container {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
+.cy-container { width: 100%; height: 100%; display: block; }
 </style>

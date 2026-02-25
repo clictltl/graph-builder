@@ -1,56 +1,94 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
-import Sidebar from '../components/Navigation.vue';
-import GraphView from '../components/GraphCanvas.vue';
+import Navigation from '../components/Navigation.vue';
+import GraphCanvas from '../components/GraphCanvas.vue';
 
 const store = useProjectStore();
-const graphMode = ref<'local' | 'global'>('local'); // Estado local do componente
+
+// Profundidade do grafo (1 a 5)
+const graphDepth = ref(1);
+const isGraphExpanded = ref(false);
 
 const activeNode = computed(() => {
   if (store.selectedNodeId) {
-    return store.project.nodes.find(n => n.id === store.selectedNodeId);
+    return store.project.nodes.find(n => n.id === store.selectedNodeId) || null;
   }
-  return store.project.nodes[0] || null;
+  return null;
 });
 
 const isEmpty = computed(() => store.project.nodes.length === 0);
+
+// Resetar ao mudar de nó (opcional, mas bom para UX)
+watch(activeNode, (newVal) => {
+  if (newVal) {
+    graphDepth.value = 1; // Volta ao foco local
+    isGraphExpanded.value = false; // Sai do modo tela cheia se mudar de nó
+  }
+});
 </script>
 
 <template>
   <div class="preview-layout">
-    <Sidebar />
+    <Navigation />
 
     <main class="content-area">
+      
+      <!-- CASO 1: Vazio -->
       <div v-if="isEmpty" class="empty-msg">
         O projeto está vazio.
       </div>
 
-      <div v-else-if="activeNode" class="document-container">
+      <!-- CASO 2: Home View (Grafo Global) -->
+      <div v-else-if="!activeNode" class="home-view">
+        <div class="home-header">
+          <h1>Visão Geral</h1>
+          <p>Selecione um item para ver detalhes.</p>
+        </div>
+        <div class="full-graph-container">
+          <GraphCanvas :force-global="true" />
+        </div>
+      </div>
+
+      <!-- CASO 3: Leitura (Com Slider e Expandir) -->
+      <div v-else class="document-view">
         
-        <!-- Container do Grafo com Controles -->
-        <div class="graph-section">
+        <!-- Área do Grafo com classe dinâmica para Fullscreen -->
+        <div class="graph-section" :class="{ 'expanded': isGraphExpanded }">
+          
           <div class="graph-controls">
-            <span>Visualização:</span>
+            <span class="label">Contexto:</span>
+            
+            <!-- Slider -->
+            <div class="slider-container">
+              <span class="small-label">Foco</span>
+              <input 
+                type="range" 
+                min="1" 
+                max="5" 
+                step="1" 
+                v-model.number="graphDepth"
+              />
+              <span class="small-label">{{ graphDepth >= 5 ? 'Todos' : graphDepth }}</span>
+            </div>
+
+            <div class="spacer"></div>
+
+            <!-- Botão Expandir -->
             <button 
-              :class="{ active: graphMode === 'local' }" 
-              @click="graphMode = 'local'"
+              class="btn-expand" 
+              @click="isGraphExpanded = !isGraphExpanded"
+              :title="isGraphExpanded ? 'Reduzir' : 'Expandir'"
             >
-              Foco (Local)
-            </button>
-            <button 
-              :class="{ active: graphMode === 'global' }" 
-              @click="graphMode = 'global'"
-            >
-              Todos (Global)
+              {{ isGraphExpanded ? '↙ Reduzir' : '⤢ Expandir' }}
             </button>
           </div>
 
           <div class="graph-box">
-            <!-- Passamos o ID e o MODO -->
-            <GraphView 
+            <GraphCanvas 
               :active-node-id="activeNode.id"
-              :mode="graphMode" 
+              :depth="graphDepth"
+              :is-expanded="isGraphExpanded"
             />
           </div>
         </div>
@@ -58,10 +96,8 @@ const isEmpty = computed(() => store.project.nodes.length === 0);
         <article class="markdown-body">
           <h1 class="node-title">{{ activeNode.title }}</h1>
           <div class="node-content">
-            <p v-if="!activeNode.content" class="no-content">
-              Sem conteúdo.
-            </p>
-            <div v-else style="white-space: pre-wrap;">{{ activeNode.content }}</div>
+            <div v-if="activeNode.content" style="white-space: pre-wrap;">{{ activeNode.content }}</div>
+            <p v-else class="no-content">Sem conteúdo escrito.</p>
           </div>
         </article>
 
@@ -72,91 +108,77 @@ const isEmpty = computed(() => store.project.nodes.length === 0);
 
 <style scoped>
 .preview-layout {
-  display: flex;
-  height: 100%;
-  width: 100%;
-  background: #fff;
+  display: flex; height: 100%; width: 100%; background: #fff;
 }
 .content-area {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  justify-content: center;
-  background: #fff;
-}
-.document-container {
-  width: 100%;
-  max-width: 800px;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-.empty-msg {
-  margin-top: 50px;
-  color: #64748b;
-  font-size: 1.2rem;
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column;
 }
 
+/* --- HOME VIEW --- */
+.home-view { flex: 1; display: flex; flex-direction: column; height: 100%; }
+.home-header { padding: 30px 40px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.home-header h1 { margin: 0; color: #1e293b; }
+.full-graph-container { flex: 1; background: #f1f5f9; }
+
+/* --- DOCUMENT VIEW --- */
+.document-view {
+  width: 100%; max-width: 900px; margin: 0 auto;
+  padding: 30px; display: flex; flex-direction: column; gap: 30px;
+}
+
+/* --- GRAPH SECTION & CONTROLS --- */
 .graph-section {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #f8fafc;
+  border: 1px solid #e2e8f0; border-radius: 8px;
+  overflow: hidden; background: #f8fafc;
+  display: flex; flex-direction: column;
+  transition: all 0.3s ease;
 }
 
 .graph-controls {
-  padding: 8px 16px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #fff;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  font-size: 0.9rem;
-  color: #64748b;
+  padding: 8px 16px; border-bottom: 1px solid #e2e8f0;
+  background: #fff; display: flex; gap: 16px; align-items: center;
+  height: 50px;
 }
 
-.graph-controls button {
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 4px 12px;
-  border-radius: 15px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: #64748b;
-  transition: all 0.2s;
+.slider-container {
+  display: flex; align-items: center; gap: 8px; flex: 1; max-width: 200px;
 }
 
-.graph-controls button:hover {
-  background: #f1f5f9;
+input[type=range] { flex: 1; cursor: pointer; }
+
+.label { font-size: 0.9rem; font-weight: 600; color: #475569; }
+.small-label { font-size: 0.8rem; color: #94a3b8; width: 30px; text-align: center; }
+
+.spacer { flex: 1; }
+
+.btn-expand {
+  background: transparent; border: 1px solid #e2e8f0;
+  padding: 4px 10px; border-radius: 4px; cursor: pointer;
+  font-size: 0.85rem; color: #64748b;
+}
+.btn-expand:hover { background: #f1f5f9; color: #334155; }
+
+.graph-box { height: 300px; width: 100%; background: #f8fafc; }
+
+/* --- ESTADO EXPANDIDO (FULLSCREEN) --- */
+.graph-section.expanded {
+  position: fixed;
+  top: 20px; left: 20px; right: 20px; bottom: 20px;
+  z-index: 9999;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); /* Backdrop escuro */
+  height: auto; /* Reseta altura fixa */
+  width: auto;
 }
 
-.graph-controls button.active {
-  background: #e0f2fe;
-  color: #0284c7;
-  border-color: #bae6fd;
-  font-weight: 600;
+.graph-section.expanded .graph-box {
+  flex: 1; /* Ocupa todo o espaço restante do container fixo */
+  height: auto;
 }
 
-.graph-box {
-  height: 350px; /* Altura fixa */
-  width: 100%;
-}
-
-.node-title {
-  font-size: 2.5rem;
-  color: #1e293b;
-  border-bottom: 2px solid #f1f5f9;
-  padding-bottom: 16px;
-  margin-bottom: 24px;
-}
-.node-content {
-  font-size: 1.1rem;
-  line-height: 1.6;
-  color: #334155;
-}
-.no-content {
-  font-style: italic;
-  color: #94a3b8;
-}
+/* --- TYPOGRAPHY --- */
+.node-title { font-size: 2.2rem; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 24px; }
+.node-content { font-size: 1.1rem; line-height: 1.6; color: #334155; }
+.no-content { font-style: italic; color: #94a3b8; }
+.empty-msg { margin: 50px auto; color: #64748b; font-size: 1.2rem; }
 </style>

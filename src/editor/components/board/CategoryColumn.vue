@@ -1,49 +1,40 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import type { Category } from '@/shared/types';
 import { useProjectStore } from '@/shared/stores/projectStore';
 import NodeCard from './NodeCard.vue';
+import CategoryEditModal from '../modals/CategoryEditModal.vue';
 
 const props = defineProps<{
   category: Category;
 }>();
 
 const store = useProjectStore();
-
 const myNodes = computed(() => store.nodesByCategory(props.category.id));
+const showEditModal = ref(false);
 
 const handleAddNode = () => {
   store.addNode(props.category.id);
-};
-
-// Renomear ao clicar duas vezes
-const handleRename = () => {
-  const newName = prompt('Novo nome da categoria:', props.category.name);
-  if (newName && newName.trim() !== '') {
-    store.updateCategory(props.category.id, newName);
-  }
-};
-
-// Excluir categoria
-const handleDelete = () => {
-  if (confirm(`Tem certeza que deseja excluir "${props.category.name}" e todos os seus itens?`)) {
-    store.deleteCategory(props.category.id);
-  }
 };
 </script>
 
 <template>
   <div class="category-column">
     <div class="column-header" :style="{ borderTopColor: category.color }">
-      <!-- Título clicável -->
-      <h3 @dblclick="handleRename" title="Duplo clique para renomear">
+      <!-- Nome e Cor -->
+      <h3 :style="{ color: category.color }">
         {{ category.name }}
       </h3>
       
       <div class="actions">
         <span class="count">{{ myNodes.length }}</span>
-        <button class="btn-delete-cat" @click="handleDelete" title="Excluir Categoria">
-          &times;
+        
+        <!-- Botão de Edição (Lápis) -->
+        <button class="btn-icon" @click="showEditModal = true" title="Editar Categoria">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
         </button>
       </div>
     </div>
@@ -61,6 +52,13 @@ const handleDelete = () => {
         + Adicionar Item
       </button>
     </div>
+
+    <!-- Modal de Edição -->
+    <CategoryEditModal 
+      v-if="showEditModal" 
+      :category="category" 
+      @close="showEditModal = false" 
+    />
   </div>
 </template>
 
@@ -91,7 +89,7 @@ const handleDelete = () => {
 .column-header h3 {
   margin: 0;
   font-size: 1rem;
-  cursor: text;
+  font-weight: 700;
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -108,22 +106,27 @@ const handleDelete = () => {
   background: #e2e8f0;
   padding: 2px 6px;
   border-radius: 10px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #64748b;
+  font-weight: 600;
 }
 
-.btn-delete-cat {
+.btn-icon {
   background: transparent;
   border: none;
   color: #94a3b8;
-  font-size: 1.2rem;
   cursor: pointer;
-  line-height: 1;
-  padding: 0 4px;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
-.btn-delete-cat:hover {
-  color: #ef4444;
+.btn-icon:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
 }
 
 .column-body {
@@ -145,6 +148,7 @@ const handleDelete = () => {
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s;
+  font-size: 0.9rem;
 }
 
 .btn-add:hover {

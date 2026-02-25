@@ -2,10 +2,23 @@ import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
 import type { GraphProject, Category, Node, Edge } from '../types';
 
-// Função auxiliar para gerar datas ISO
+export const CATEGORY_COLORS = [
+  '#ef4444', // Red
+  '#f97316', // Orange
+  '#f59e0b', // Amber
+  '#84cc16', // Lime
+  '#10b981', // Emerald
+  '#06b6d4', // Cyan
+  '#3b82f6', // Blue
+  '#8b5cf6', // Violet
+  '#d946ef', // Fuchsia
+  '#f43f5e', // Rose
+];
+
+const DEFAULT_COLOR = '#64748b';
+
 const now = () => new Date().toISOString();
 
-// Estado inicial padrão
 const createEmptyProject = (): GraphProject => ({
   meta: {
     id: uuidv4(),
@@ -27,15 +40,14 @@ export const useProjectStore = defineStore('project', {
   }),
 
   getters: {
-    nodesByCategory: (state) => {
-      return (categoryId: string) => 
-        state.project.nodes.filter((n) => n.categoryId === categoryId);
-    },
+    nodesByCategory: (state) => (categoryId: string) => 
+      state.project.nodes.filter((n) => n.categoryId === categoryId),
     
-    activeNode: (state) => {
-      if (!state.selectedNodeId) return null;
-      return state.project.nodes.find(n => n.id === state.selectedNodeId);
-    }
+    activeNode: (state) => 
+      state.selectedNodeId ? state.project.nodes.find(n => n.id === state.selectedNodeId) : null,
+      
+    // Helper para saber quais cores já estão em uso
+    usedColors: (state) => new Set(state.project.categories.map(c => c.color))
   },
 
   actions: {
@@ -49,14 +61,40 @@ export const useProjectStore = defineStore('project', {
       this.selectedNodeId = null;
     },
 
-    addCategory(name: string) {
+    addCategory(name: string, color?: string) {
+      let finalColor = color;
+      if (!finalColor) {
+        const colorIndex = this.project.categories.length % CATEGORY_COLORS.length;
+        finalColor = CATEGORY_COLORS[colorIndex] || DEFAULT_COLOR;
+      }
+
       const newCategory: Category = {
         id: uuidv4(),
         name,
-        color: '#64748b', 
+        color: finalColor,
         order: this.project.categories.length,
       };
       this.project.categories.push(newCategory);
+    },
+
+    updateCategory(id: string, name: string, color?: string) {
+      const category = this.project.categories.find(c => c.id === id);
+      if (category) {
+        category.name = name;
+        if (color) category.color = color;
+        this.project.meta.updatedAt = now();
+      }
+    },
+
+    deleteCategory(id: string) {
+      this.project.categories = this.project.categories.filter(c => c.id !== id);
+      const nodesToDelete = this.project.nodes.filter(n => n.categoryId === id);
+      const nodeIds = nodesToDelete.map(n => n.id);
+      this.project.nodes = this.project.nodes.filter(n => n.categoryId !== id);
+      this.project.edges = this.project.edges.filter(e => 
+        !nodeIds.includes(e.source) && !nodeIds.includes(e.target)
+      );
+      this.project.meta.updatedAt = now();
     },
 
     addNode(categoryId: string) {
@@ -74,8 +112,6 @@ export const useProjectStore = defineStore('project', {
     updateNode(id: string, updates: Partial<Node>) {
       const node = this.project.nodes.find(n => n.id === id);
       if (node) {
-        // Correção: Object.assign mescla as atualizações no objeto existente
-        // sem risco de sobrescrever campos obrigatórios com undefined
         Object.assign(node, updates);
         this.project.meta.updatedAt = now();
       }
@@ -84,10 +120,7 @@ export const useProjectStore = defineStore('project', {
     deleteNode(id: string) {
       this.project.nodes = this.project.nodes.filter(n => n.id !== id);
       this.project.edges = this.project.edges.filter(e => e.source !== id && e.target !== id);
-      
-      if (this.selectedNodeId === id) {
-        this.selectedNodeId = null;
-      }
+      if (this.selectedNodeId === id) this.selectedNodeId = null;
       this.project.meta.updatedAt = now();
     },
 
@@ -99,41 +132,15 @@ export const useProjectStore = defineStore('project', {
       );
 
       if (!exists) {
-        // Correção: Tipamos explicitamente o objeto como Edge
         const newEdge: Edge = {
           id: uuidv4(),
           source: sourceId,
           target: targetId
         };
+        
         this.project.edges.push(newEdge);
         this.project.meta.updatedAt = now();
       }
-    },
-
-    updateCategory(id: string, name: string) {
-      const category = this.project.categories.find(c => c.id === id);
-      if (category) {
-        category.name = name;
-        this.project.meta.updatedAt = now();
-      }
-    },
-
-    deleteCategory(id: string) {
-      // 1. Remove a categoria
-      this.project.categories = this.project.categories.filter(c => c.id !== id);
-      
-      // 2. Remove todos os nós que estavam dentro dela (Cascata)
-      const nodesToDelete = this.project.nodes.filter(n => n.categoryId === id);
-      const nodeIds = nodesToDelete.map(n => n.id);
-      
-      this.project.nodes = this.project.nodes.filter(n => n.categoryId !== id);
-
-      // 3. Limpa conexões que envolviam esses nós excluídos
-      this.project.edges = this.project.edges.filter(e => 
-        !nodeIds.includes(e.source) && !nodeIds.includes(e.target)
-      );
-
-      this.project.meta.updatedAt = now();
-    },
+    }
   }
 });
