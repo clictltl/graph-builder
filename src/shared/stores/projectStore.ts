@@ -58,7 +58,9 @@ export const useProjectStore = defineStore('project', {
 
   getters: {
     nodesByCategory: (state) => (categoryId: string) => 
-      state.project.nodes.filter((n) => n.categoryId === categoryId),
+      state.project.nodes
+        .filter((n) => n.categoryId === categoryId)
+        .sort((a, b) => a.order - b.order),
     
     activeNode: (state) => 
       state.selectedNodeId ? state.project.nodes.find(n => n.id === state.selectedNodeId) : null,
@@ -133,11 +135,13 @@ export const useProjectStore = defineStore('project', {
     },
 
     addNode(categoryId: string) {
+      const currentCount = this.project.nodes.filter(n => n.categoryId === categoryId).length;
       const newNode: Node = {
         id: uuidv4(),
         categoryId,
         title: 'Novo Item',
         content: '',
+        order: currentCount,
       };
       this.project.nodes.push(newNode);
       this.selectedNodeId = newNode.id;
@@ -156,6 +160,17 @@ export const useProjectStore = defineStore('project', {
       this.project.nodes = this.project.nodes.filter(n => n.id !== id);
       this.project.edges = this.project.edges.filter(e => e.source !== id && e.target !== id);
       if (this.selectedNodeId === id) this.selectedNodeId = null;
+      this.project.meta.updatedAt = now();
+    },
+
+    reorderNodesInCategory(categoryId: string, newOrderedNodes: Node[]) {
+      const otherNodes = this.project.nodes.filter(n => n.categoryId !== categoryId);
+      const updatedNodes = newOrderedNodes.map((node, index) => ({
+        ...node,
+        categoryId: categoryId,
+        order: index
+      }));
+      this.project.nodes = [...otherNodes, ...updatedNodes];
       this.project.meta.updatedAt = now();
     },
 

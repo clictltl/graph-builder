@@ -36,6 +36,7 @@ export interface Node {
   categoryId: string;  // FK: Pertence a uma categoria
   title: string;
   content: string;     // Markdown / HTML
+  order: number;
   
   // Posição visual (x, y) é opcional pois só existe no Preview/Grafo.
   // No Editor, a posição é automática baseada na lista.

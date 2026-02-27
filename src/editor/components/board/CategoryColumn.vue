@@ -5,13 +5,17 @@ import { useProjectStore } from '@/shared/stores/projectStore';
 import NodeCard from './NodeCard.vue';
 import CategoryEditModal from '../modals/CategoryEditModal.vue';
 import { Pencil } from 'lucide-vue-next';
+import draggable from 'vuedraggable';
 
 const props = defineProps<{
   category: Category;
 }>();
 
 const store = useProjectStore();
-const myNodes = computed(() => store.nodesByCategory(props.category.id));
+const myNodes = computed({
+  get: () => store.nodesByCategory(props.category.id),
+  set: (val) => store.reorderNodesInCategory(props.category.id, val)
+});
 const showEditModal = ref(false);
 
 const handleAddNode = () => {
@@ -38,11 +42,18 @@ const handleAddNode = () => {
     </div>
 
     <div class="column-body">
-      <NodeCard 
-        v-for="node in myNodes" 
-        :key="node.id" 
-        :node="node" 
-      />
+      <draggable
+        v-model="myNodes"
+        item-key="id"
+        group="nodes" 
+        ghost-class="ghost-card"
+        animation="200"
+        class="nodes-draggable-area"
+      >
+        <template #item="{ element }">
+          <NodeCard :node="element" />
+        </template>
+      </draggable>
     </div>
 
     <div class="column-footer">
@@ -162,5 +173,19 @@ const handleAddNode = () => {
 .icon-xs {
   width: 14px;
   height: 14px;
+}
+
+.nodes-draggable-area {
+  min-height: 10px; /* Garante área de drop mesmo vazia */
+  display: flex;
+  flex-direction: column;
+  gap: 0; /* O gap é controlado pela margin do NodeCard ou aqui */
+  height: 100%;
+}
+
+.ghost-card {
+  opacity: 0.5;
+  background: #e2e8f0;
+  border: 1px dashed #94a3b8;
 }
 </style>
