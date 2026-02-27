@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
 import Navigation from '../components/Navigation.vue';
 import GraphCanvas from '../components/GraphCanvas.vue';
+import { Maximize2, Minimize2 } from 'lucide-vue-next';
 
 const store = useProjectStore();
 
@@ -80,7 +81,9 @@ watch(activeNode, (newVal) => {
               @click="isGraphExpanded = !isGraphExpanded"
               :title="isGraphExpanded ? 'Reduzir' : 'Expandir'"
             >
-              {{ isGraphExpanded ? '↙ Reduzir' : '⤢ Expandir' }}
+              <Minimize2 v-if="isGraphExpanded" class="icon-xs" />
+              <Maximize2 v-else class="icon-xs" />
+              <span>{{ isGraphExpanded ? 'Reduzir' : 'Expandir' }}</span>
             </button>
           </div>
 
@@ -153,10 +156,12 @@ input[type=range] { flex: 1; cursor: pointer; }
 
 .btn-expand {
   background: transparent; border: 1px solid #e2e8f0;
-  padding: 4px 10px; border-radius: 4px; cursor: pointer;
+  padding: 6px 10px; border-radius: 4px; cursor: pointer;
   font-size: 0.85rem; color: #64748b;
+  display: flex; align-items: center; gap: 6px;
 }
 .btn-expand:hover { background: #f1f5f9; color: #334155; }
+.icon-xs { width: 14px; height: 14px; }
 
 .graph-box { height: 300px; width: 100%; background: #f8fafc; }
 

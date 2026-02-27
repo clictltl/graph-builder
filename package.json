@@ -7,12 +7,13 @@
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "build:github": "vue-tsc && vite build --mode github",
-    "deploy": "npm run build:github && touch dist/.nojekyll", 
+    "deploy": "npm run build:github && touch dist/.nojekyll",
     "preview": "vite preview"
   },
   "dependencies": {
     "@vueuse/core": "^14.2.1",
     "cytoscape": "^3.33.1",
+    "lucide-vue-next": "^0.575.0",
     "pinia": "^3.0.4",
     "sass": "^1.97.3",
     "uuid": "^13.0.0",

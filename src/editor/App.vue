@@ -5,6 +5,7 @@ import ReaderLayout from '@/runtime/layouts/ReaderLayout.vue';
 import FileMenu from '@/editor/components/layout/FileMenu.vue';
 import ToastContainer from '@/shared/components/layout/ToastContainer.vue';
 import clicLogo from '@/assets/logo-clic.svg';
+import { Pencil, Eye } from 'lucide-vue-next';
 
 const isPreview = ref(false);
 </script>
@@ -39,7 +40,7 @@ const isPreview = ref(false);
       :class="{ active: isPreview }" 
       @click="isPreview = !isPreview"
     >
-      <span class="icon">{{ isPreview ? '✏️' : '👁️' }}</span>
+      <component :is="isPreview ? Pencil : Eye" class="icon-fab" />
       <span class="label">{{ isPreview ? 'Editar' : 'Visualizar' }}</span>
     </button>
 
@@ -114,10 +115,16 @@ html, body, #app {
 }
 
 .fab-preview.active {
-  background-color: #4b5563; /* Cinza Escuro para "Voltar" */
+  background-color: #4b5563;
   box-shadow: 0 4px 12px rgba(75, 85, 99, 0.3);
 }
+
 .fab-preview.active:hover {
   background-color: #374151;
+}
+
+.icon-fab {
+  width: 18px;
+  height: 18px;
 }
 </style>

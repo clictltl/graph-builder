@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
+import { Trash2, MousePointerClick, ChevronRight } from 'lucide-vue-next';
 
 const store = useProjectStore();
 
@@ -87,6 +88,7 @@ watch(() => activeNode.value?.id, () => {
     
     <!-- Estado: Nenhum nó selecionado -->
     <div v-if="!activeNode" class="empty-state">
+      <MousePointerClick class="empty-icon" />
       <p>Selecione um item para editar</p>
     </div>
 
@@ -97,7 +99,7 @@ watch(() => activeNode.value?.id, () => {
           <h2>Editar Item</h2>
         </div>
         <button class="btn-delete" @click="handleDelete" title="Excluir item">
-          🗑️
+          <Trash2 class="icon-trash" />
         </button>
       </div>
 
@@ -145,9 +147,10 @@ watch(() => activeNode.value?.id, () => {
                 @click="toggleCategory(group.category.id)"
               >
                 <span class="cat-name">{{ group.category.name }}</span>
-                <span class="chevron" :class="{ open: expandedCategories.has(group.category.id) }">
-                  ▼
-                </span>
+                <ChevronRight 
+                  class="chevron-icon" 
+                  :class="{ open: expandedCategories.has(group.category.id) }"
+                />
               </div>
 
               <!-- Lista de Itens (Expansível) -->
@@ -176,23 +179,26 @@ watch(() => activeNode.value?.id, () => {
 
 <style scoped>
 .properties-panel {
-  width: 320px;
+  width: 100%; 
+  height: 100%;
   background: white;
-  border-left: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .empty-state {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   color: #94a3b8;
-  padding: 20px;
+  padding: 30px;
   text-align: center;
+  gap: 10px;
 }
+
+.empty-icon { width: 48px; height: 48px; opacity: 0.3; }
 
 .edit-form {
   display: flex;
@@ -201,44 +207,56 @@ watch(() => activeNode.value?.id, () => {
 }
 
 .header {
-  padding: 16px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 20px;
+  border-bottom: 1px solid #f1f5f9;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8fafc;
+  background: #fff;
 }
 
 .header h2 {
   margin: 0;
-  font-size: 1rem;
-  color: #334155;
-  font-weight: 600;
+  font-size: 1.1rem;
+  color: #1e293b;
+  font-weight: 700;
 }
 
 .btn-delete {
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 6px;
-  border-radius: 4px;
+  background: #fff1f2;
+  border: 1px solid #fecaca;
+  color: #e11d48;
+  padding: 6px 10px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-delete:hover {
-  background: #fee2e2;
-  border-color: #fecaca;
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+.icon-trash {
+  width: 16px;
+  height: 16px;
 }
 
 .scrollable-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 24px;
 }
 
+.scrollable-content::-webkit-scrollbar { width: 6px; }
+.scrollable-content::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .form-group label {
@@ -247,106 +265,103 @@ watch(() => activeNode.value?.id, () => {
   font-size: 0.85rem;
   margin-bottom: 8px;
   color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 input[type="text"], textarea {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 0.95rem;
   font-family: inherit;
-  transition: border 0.2s;
+  transition: all 0.2s;
+  background: #f8fafc;
 }
 
 input[type="text"]:focus, textarea:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .input-title {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1e293b;
 }
 
 small, .hint {
   display: block;
-  margin-top: 4px;
+  margin-top: 6px;
   color: #94a3b8;
   font-size: 0.8rem;
 }
 
-/* --- Estilos do Acordeão de Conexões --- */
-
+/* --- Acordeão de Conexões --- */
 .connections-container {
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #fff;
   overflow: hidden;
 }
 
-.category-group {
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.category-group:last-child {
-  border-bottom: none;
-}
+.category-group { border-bottom: 1px solid #f1f5f9; }
+.category-group:last-child { border-bottom: none; }
 
 .group-header {
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: #f8fafc;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-left: 4px solid transparent; /* A cor vem do style inline */
+  border-left: 4px solid transparent; 
   font-size: 0.9rem;
   font-weight: 600;
   color: #475569;
   transition: background 0.2s;
 }
 
-.group-header:hover {
-  background: #f1f5f9;
-}
+.group-header:hover { background: #f1f5f9; }
 
-.chevron {
-  font-size: 0.7rem;
+.chevron-icon {
+  width: 16px;
+  height: 16px;
   color: #94a3b8;
   transition: transform 0.2s;
 }
 
-.chevron.open {
-  transform: rotate(180deg);
-}
+.chevron-icon.open { transform: rotate(90deg); }
 
 .group-items {
   background: #fff;
   padding: 6px 0;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .connection-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
+  gap: 12px;
+  padding: 10px 16px;
   cursor: pointer;
   font-size: 0.9rem;
   color: #334155;
   transition: background 0.1s;
 }
 
-.connection-item:hover {
-  background: #f8fafc;
-}
+.connection-item:hover { background: #f8fafc; }
 
 .connection-item input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
-  accent-color: #3b82f6;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
 }
 
 .node-label {

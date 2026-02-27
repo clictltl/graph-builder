@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
+import { Home, ChevronRight } from 'lucide-vue-next';
 
 const store = useProjectStore();
 
@@ -40,7 +41,8 @@ const handleSelect = (nodeId: string) => {
         class="btn-home" 
         @click="store.selectedNodeId = null"
       >
-        🏠 Ver Grafo Global
+        <Home class="icon-sm" /> 
+        <span>Ver Grafo Global</span>
       </button>
     </div>
     
@@ -56,7 +58,10 @@ const handleSelect = (nodeId: string) => {
           :style="{ borderLeftColor: cat.color }"
         >
           <span class="cat-name" :style="{ color: cat.color }">{{ cat.name }}</span>
-          <span class="chevron" :class="{ open: expandedCategories.has(cat.id) }">▼</span>
+          <ChevronRight 
+            class="chevron" 
+            :class="{ open: expandedCategories.has(cat.id) }" 
+          />
         </h3>
 
         <!-- Lista (Só aparece se estiver expandida) -->
@@ -104,19 +109,29 @@ const handleSelect = (nodeId: string) => {
 
 .btn-home {
   width: 100%;
-  padding: 6px;
+  padding: 8px;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.85rem;
   color: #475569;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-home:hover {
   background: #e2e8f0;
   color: #1e293b;
+  border-color: #94a3b8;
+}
+
+.icon-sm {
+  width: 16px;
+  height: 16px;
 }
 
 .sidebar-nav {
@@ -156,7 +171,7 @@ const handleSelect = (nodeId: string) => {
 }
 
 .chevron.open {
-  transform: rotate(180deg);
+  transform: rotate(90deg);
 }
 
 ul {

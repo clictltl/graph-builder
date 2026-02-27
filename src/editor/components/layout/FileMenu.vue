@@ -7,15 +7,13 @@
       <!-- Botão Gatilho -->
       <button class="menu-trigger" :class="{ 'active': open }" @click="toggleMenu">
         <span class="label">Arquivo</span>
-        <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        <ChevronDown class="icon-sm chevron" />
       </button>
 
       <!-- Nome do Projeto -->
       <div class="project-info">
         <div class="separator-vertical"></div>
-        <span class="icon">📄</span>
+        <FileText class="icon-sm text-gray" />
         <span class="name" :title="store.project.meta.name">
           {{ store.project.meta.name || 'Sem Título' }}
         </span>
@@ -31,7 +29,7 @@
         <!-- Grupo: Novo -->
         <div class="menu-group">
           <div class="menu-item" @click="handleMenuClick(store.createNew)">
-            <span class="icon">✨</span> Novo projeto
+            <Plus class="icon-menu" /> Novo projeto
           </div>
         </div>
         
@@ -42,7 +40,7 @@
           <div class="menu-label">Local (PC)</div>
           
           <div class="menu-item" @click="handleMenuClick(triggerFileInput)">
-            <span class="icon">📥</span> Importar JSON
+            <FolderInput class="icon-menu" /> Importar JSON
           </div>
           <!-- Input invisível para upload -->
           <input 
@@ -54,7 +52,7 @@
           />
 
           <div class="menu-item" @click="handleMenuClick(handleExport)">
-            <span class="icon">📤</span> Exportar JSON
+            <Download class="icon-menu" /> Exportar JSON
           </div>
         </div>
 
@@ -68,6 +66,13 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
 import { useToast } from '@/shared/composables/useToast';
 import { exportToJSON, parseJSONFile } from '@/editor/utils/localProjectIO';
+import { 
+  ChevronDown, 
+  FileText, 
+  Plus, 
+  FolderInput, 
+  Download 
+} from 'lucide-vue-next';
 
 const store = useProjectStore();
 const toast = useToast();
@@ -151,7 +156,7 @@ async function handleImport(event: Event) {
 }
 .menu-trigger:hover, .menu-trigger.active { background-color: #f3f4f6; color: #111827; }
 .menu-trigger.active .chevron { transform: rotate(180deg); }
-.chevron { transition: transform 0.2s ease; opacity: 0.6; }
+.chevron { transition: transform 0.2s ease; }
 
 .project-info {
   display: flex; align-items: center; gap: 8px;
@@ -162,24 +167,22 @@ async function handleImport(event: Event) {
 
 .dropdown-menu {
   position: absolute; top: calc(100% + 6px); left: 0; right: auto;
-  transform-origin: top left; min-width: 240px;
+  transform-origin: top left; min-width: 200px;
   background: white; border: 1px solid #e5e7eb; border-radius: 8px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   padding: 6px; z-index: 9999;
 }
-
 .dropdown-menu.align-right { left: auto; right: 0; transform-origin: top right; }
 
 .menu-group { display: flex; flex-direction: column; }
 .menu-label { font-size: 11px; text-transform: uppercase; color: #9ca3af; font-weight: 600; padding: 8px 10px 4px; letter-spacing: 0.05em; }
 .menu-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; color: #4b5563; transition: background-color 0.15s; }
 .menu-item:hover { background-color: #f3f4f6; color: #1f2937; }
-.menu-item.danger { color: #dc2626; }
-.menu-item.danger:hover { background-color: #fef2f2; }
-.menu-item.highlight { color: #2563eb; font-weight: 500; }
-.menu-item.highlight:hover { background-color: #eff6ff; }
 .divider { height: 1px; background-color: #e5e7eb; margin: 6px 0; }
-.menu-item .icon { font-size: 16px; min-width: 20px; text-align: center; }
+
+.icon-sm { width: 16px; height: 16px; }
+.icon-menu { width: 18px; height: 18px; color: #6b7280; }
+.text-gray { color: #9ca3af; }
 
 /* Transitions */
 .fade-slide-enter-active, .fade-slide-leave-active { transition: opacity 0.2s, transform 0.2s; }
