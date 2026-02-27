@@ -104,6 +104,15 @@ export const useProjectStore = defineStore('project', {
       this.project.meta.updatedAt = now();
     },
 
+    reorderCategories(newCategories: Category[]) {
+      this.project.categories = newCategories;
+      this.project.categories.forEach((cat, index) => {
+        cat.order = index;
+      });
+
+      this.project.meta.updatedAt = now();
+    },
+
     addNode(categoryId: string) {
       const newNode: Node = {
         id: uuidv4(),

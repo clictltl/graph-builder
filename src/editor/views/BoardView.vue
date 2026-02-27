@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
 import CategoryColumn from '@/editor/components/board/CategoryColumn.vue';
 import PropertiesPanel from '@/editor/components/panels/PropertiesPanel.vue';
 import CategoryEditModal from '@/editor/components/modals/CategoryEditModal.vue';
 import { Plus } from 'lucide-vue-next';
+import draggable from 'vuedraggable';
 
 const store = useProjectStore();
 const showCreateModal = ref(false);
+const myCategories = computed({
+  get: () => store.project.categories,
+  set: (val) => store.reorderCategories(val)
+});
 
 </script>
 
@@ -16,6 +21,7 @@ const showCreateModal = ref(false);
     
     <div class="board-container">
       <div class="board-canvas">
+        
         <div class="add-column-placeholder sticky-column">
           <button @click="showCreateModal = true" class="btn-create-col">
             <div class="icon-circle">
@@ -25,11 +31,19 @@ const showCreateModal = ref(false);
           </button>
         </div>
 
-        <CategoryColumn 
-          v-for="cat in store.project.categories" 
-          :key="cat.id" 
-          :category="cat" 
-        />
+         <draggable 
+          v-model="myCategories" 
+          item-key="id"
+          direction="horizontal"
+          class="draggable-flex"
+          handle=".column-header"
+          animation="200"
+          ghost-class="ghost-card"
+        >
+          <template #item="{ element }">
+            <CategoryColumn :category="element" />
+          </template>
+        </draggable>
       </div>
     </div>
 
@@ -59,7 +73,6 @@ const showCreateModal = ref(false);
   background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
   background-size: 20px 20px;
   padding: 20px;
-  scroll-behavior: smooth;
 }
 
 .board-canvas {
@@ -68,6 +81,19 @@ const showCreateModal = ref(false);
   height: 100%;
   align-items: flex-start;
   padding-right: 40px;
+}
+
+.draggable-flex {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+  align-items: flex-start;
+}
+
+.ghost-card {
+  opacity: 0.5;
+  background: #e2e8f0;
+  border: 2px dashed #94a3b8;
 }
 
 .panel-container {

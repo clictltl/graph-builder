@@ -82,6 +82,11 @@ const handleAddNode = () => {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e2e8f0;
+  cursor: grab;
+}
+
+.column-header:active {
+  cursor: grabbing;
 }
 
 .column-header h3 {
