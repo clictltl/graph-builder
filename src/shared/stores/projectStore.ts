@@ -33,6 +33,23 @@ const createEmptyProject = (): GraphProject => ({
   assets: {},
 });
 
+const validateCategoryName = (categories: Category[], name: string, excludeId?: string) => {
+  const normalizedName = name.trim().toLowerCase();
+  
+  if (!normalizedName) {
+    throw new Error("O nome da categoria não pode ser vazio.");
+  }
+
+  const exists = categories.some(c => 
+    c.id !== excludeId && 
+    c.name.trim().toLowerCase() === normalizedName
+  );
+
+  if (exists) {
+    throw new Error(`A categoria "${name}" já existe.`);
+  }
+};
+
 export const useProjectStore = defineStore('project', {
   state: () => ({
     project: createEmptyProject() as GraphProject,
@@ -62,6 +79,7 @@ export const useProjectStore = defineStore('project', {
     },
 
     addCategory(name: string, color?: string) {
+      validateCategoryName(this.project.categories, name);
       let finalColor = color;
       if (!finalColor) {
         const colorIndex = this.project.categories.length % CATEGORY_COLORS.length;
@@ -82,6 +100,7 @@ export const useProjectStore = defineStore('project', {
     },
 
     updateCategory(id: string, name: string, color?: string) {
+      validateCategoryName(this.project.categories, name, id);
       const category = this.project.categories.find(c => c.id === id);
       if (category) {
         category.name = name;

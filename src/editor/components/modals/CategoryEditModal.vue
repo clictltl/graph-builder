@@ -34,12 +34,16 @@ onMounted(() => setTimeout(() => nameInput.value?.focus(), 100));
 const handleSave = () => {
   if (!formName.value.trim()) return;
   
-  if (isEditing.value && props.category) {
-    store.updateCategory(props.category.id, formName.value, formColor.value);
-  } else {
-    store.addCategory(formName.value, formColor.value);
+  try {
+    if (isEditing.value && props.category) {
+      store.updateCategory(props.category.id, formName.value, formColor.value);
+    } else {
+      store.addCategory(formName.value, formColor.value);
+    }
+    emit('close');
+  } catch (error: any) {
+    alert(error.message);
   }
-  emit('close');
 };
 
 const handleDelete = () => {
