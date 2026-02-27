@@ -12,7 +12,6 @@ export const CATEGORY_COLORS = [
   '#3b82f6', // Blue
   '#8b5cf6', // Violet
   '#d946ef', // Fuchsia
-  '#f43f5e', // Rose
 ];
 
 const DEFAULT_COLOR = '#64748b';

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import type { Category } from '@/shared/types';
 import { useProjectStore, CATEGORY_COLORS } from '@/shared/stores/projectStore';
+import { Palette, Hash } from 'lucide-vue-next';
 
 // Prop agora é opcional. Se undefined = Modo Criação
 const props = defineProps<{
@@ -10,8 +11,6 @@ const props = defineProps<{
 
 const emit = defineEmits(['close']);
 const store = useProjectStore();
-
-// Modo Edição ou Criação?
 const isEditing = computed(() => !!props.category);
 
 // Lógica de Cor Inteligente (Sugere uma não usada)
@@ -29,7 +28,26 @@ const formColor = ref(getSuggestedColor());
 
 // Foco automático no input ao abrir
 const nameInput = ref<HTMLInputElement | null>(null);
+const colorInputRef = ref<HTMLInputElement | null>(null);
+
 onMounted(() => setTimeout(() => nameInput.value?.focus(), 100));
+
+const handleHexInput = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  let val = target.value;
+  
+  if (val.length > 0 && !val.startsWith('#')) {
+    val = '#' + val;
+  }
+  
+  if (/^#[0-9A-F]{6}$/i.test(val)) {
+    formColor.value = val;
+  }
+};
+
+const openNativePicker = () => {
+  colorInputRef.value?.click();
+};
 
 const handleSave = () => {
   if (!formName.value.trim()) return;
@@ -74,20 +92,65 @@ const handleDelete = () => {
 
       <div class="form-group">
         <label>Cor</label>
-        <div class="color-picker-wrapper">
-          <input type="color" v-model="formColor" class="native-color" />
+        
+        <div class="color-section">
           
+          <!-- 1. Paleta Rápida (Swatches) -->
           <div class="swatches">
             <div 
               v-for="color in CATEGORY_COLORS" 
               :key="color"
               class="swatch"
               :style="{ backgroundColor: color }"
-              :class="{ active: formColor === color, used: !isEditing && store.usedColors.has(color) && formColor !== color }"
+              :class="{ 
+                active: formColor?.toLowerCase() === color.toLowerCase(), 
+                used: !isEditing && store.usedColors.has(color) && formColor !== color 
+              }"
               @click="formColor = color"
               :title="(!isEditing && store.usedColors.has(color)) ? 'Já utilizada' : ''"
             ></div>
           </div>
+
+          <!-- 2. Seletor Personalizado (Padronizado) -->
+          <div class="custom-color-control">
+            <span class="label-sm">Personalizado:</span>
+            
+            <div class="input-group">
+              <!-- Preview Visual -->
+              <div 
+                class="color-preview" 
+                :style="{ backgroundColor: formColor }"
+                @click="openNativePicker"
+                title="Clique para escolher uma cor"
+              ></div>
+
+              <!-- Input Hexadecimal (Padrão Universal) -->
+              <div class="hex-input-wrapper">
+                <Hash class="icon-hash" />
+                <input 
+                  type="text" 
+                  :value="formColor" 
+                  @input="handleHexInput"
+                  maxlength="7"
+                  class="hex-input"
+                />
+              </div>
+
+              <!-- Botão Gatilho do Seletor Nativo -->
+              <button class="btn-picker-trigger" @click="openNativePicker" title="Abrir seletor de cores">
+                <Palette class="icon-sm" />
+              </button>
+            </div>
+            
+            <!-- Input Nativo Invisível (Backup) -->
+            <input 
+              ref="colorInputRef"
+              type="color" 
+              v-model="formColor" 
+              class="hidden-native-input" 
+            />
+          </div>
+
         </div>
       </div>
 
@@ -116,7 +179,7 @@ const handleDelete = () => {
 }
 
 .modal-card {
-  background: white; width: 340px;
+  background: white; width: 360px;
   padding: 24px; border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 }
@@ -125,27 +188,78 @@ h3 { margin: 0 0 20px 0; color: #1e293b; font-size: 1.2rem; }
 
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 8px; }
-.form-group input[type="text"] {
+.form-group input[type="text"]:not(.hex-input) {
   width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;
 }
-.form-group input[type="text"]:focus { outline: none; border-color: #3b82f6; }
+.form-group input:focus { outline: none; border-color: #3b82f6; }
 
-.color-picker-wrapper { display: flex; gap: 12px; align-items: flex-start; }
-.native-color { width: 42px; height: 42px; border: none; padding: 0; background: none; cursor: pointer; border-radius: 4px; overflow: hidden; }
-
-.swatches { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
-
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .swatch {
-  width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+  width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
   border: 2px solid transparent; transition: all 0.2s;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 .swatch:hover { transform: scale(1.1); }
 .swatch.active { border-color: #1e293b; transform: scale(1.15); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
-/* Diminui opacidade das cores já usadas para dar dica visual */
 .swatch.used { opacity: 0.3; transform: scale(0.9); }
 .swatch.used:hover { opacity: 1; transform: scale(1.1); }
+
+.custom-color-control {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.label-sm { font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; display: block; }
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-preview {
+  width: 36px; height: 36px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+}
+
+.hex-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex; align-items: center;
+}
+
+.icon-hash {
+  position: absolute; left: 8px; width: 14px; height: 14px; color: #94a3b8;
+}
+
+.hex-input {
+  width: 100%;
+  padding: 8px 8px 8px 26px; /* Espaço para o ícone hash */
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  color: #334155;
+}
+
+.btn-picker-trigger {
+  background: white; border: 1px solid #cbd5e1;
+  padding: 8px; border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.btn-picker-trigger:hover { background: #f1f5f9; border-color: #94a3b8; }
+.icon-sm { width: 18px; height: 18px; color: #475569; }
+
+.hidden-native-input {
+  opacity: 0; position: absolute; pointer-events: none; width: 0; height: 0;
+}
 
 .actions { display: flex; justify-content: space-between; margin-top: 24px; align-items: center; }
 .right-actions { display: flex; gap: 10px; }
