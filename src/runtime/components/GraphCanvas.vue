@@ -124,8 +124,6 @@ const renderGraph = () => {
         style: {
           'width': 2,
           'line-color': '#cbd5e1',
-          'target-arrow-color': '#cbd5e1',
-          'target-arrow-shape': 'triangle',
           'curve-style': 'bezier',
           'transition-property': 'line-color, opacity',
           'transition-duration': 300

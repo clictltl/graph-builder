@@ -16,7 +16,7 @@ const isPreview = ref(false);
     <!-- HEADER -->
     <header class="toolbar">
       <div class="toolbar-left">
-        <a href="#" class="toolbar-logo-link">
+        <a href="https://clic.tltlab.org" class="toolbar-logo-link">
           <img v-if="clicLogo" :src="clicLogo" alt="CLIC" class="toolbar-logo" />
           <span v-else>🔷</span>
         </a>
@@ -61,23 +61,45 @@ html, body, #app {
 
 /* HEADER */
 .toolbar {
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0 16px;
-  height: 56px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  z-index: 50;
+  justify-content: space-between;
+  padding: 6px 20px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 24px;
 }
 
-.toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 12px; }
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
 
-.toolbar-logo { height: 28px; width: auto; }
+.toolbar-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.toolbar-logo {
+  height: 42px;
+  width: auto;
+}
 
 .toolbar-title {
-  font-size: 16px; font-weight: 600; color: #111827; margin: 0;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
   white-space: nowrap;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .main-viewport {
