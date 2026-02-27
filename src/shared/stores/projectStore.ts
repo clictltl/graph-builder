@@ -72,9 +72,13 @@ export const useProjectStore = defineStore('project', {
         id: uuidv4(),
         name,
         color: finalColor,
-        order: this.project.categories.length,
+        order: 0,
       };
-      this.project.categories.push(newCategory);
+      this.project.categories.unshift(newCategory);
+      this.project.categories.forEach((cat, index) => {
+        cat.order = index;
+      });
+      this.project.meta.updatedAt = now();
     },
 
     updateCategory(id: string, name: string, color?: string) {
@@ -94,6 +98,9 @@ export const useProjectStore = defineStore('project', {
       this.project.edges = this.project.edges.filter(e => 
         !nodeIds.includes(e.source) && !nodeIds.includes(e.target)
       );
+      this.project.categories.forEach((cat, index) => {
+        cat.order = index;
+      });
       this.project.meta.updatedAt = now();
     },
 

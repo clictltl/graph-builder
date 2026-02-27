@@ -368,5 +368,7 @@ small, .hint {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-transform: none;
+  letter-spacing: normal;
 }
 </style>
