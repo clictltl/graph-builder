@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
 import Navigation from '../components/Navigation.vue';
 import GraphCanvas from '../components/GraphCanvas.vue';
+import ReferencesPanel from '../components/ReferencesPanel.vue';
 import { Maximize2, Minimize2 } from 'lucide-vue-next';
 
 const store = useProjectStore();
@@ -31,8 +32,10 @@ watch(activeNode, (newVal) => {
 
 <template>
   <div class="preview-layout">
+    <!-- COLUNA 1: Navegação -->
     <Navigation />
 
+    <!-- COLUNA 2: Conteúdo Central -->
     <main class="content-area">
       
       <!-- CASO 1: Vazio -->
@@ -106,15 +109,19 @@ watch(activeNode, (newVal) => {
 
       </div>
     </main>
+
+    <!-- COLUNA 3: Referências (Só aparece se tiver nó ativo) -->
+    <ReferencesPanel v-if="activeNode" />
+
   </div>
 </template>
 
 <style scoped>
 .preview-layout {
-  display: flex; height: 100%; width: 100%; background: #fff;
+  display: flex; height: 100%; width: 100%; background: #fff; overflow: hidden;
 }
 .content-area {
-  flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: #fff;
 }
 
 /* --- HOME VIEW --- */
@@ -125,7 +132,7 @@ watch(activeNode, (newVal) => {
 
 /* --- DOCUMENT VIEW --- */
 .document-view {
-  width: 100%; max-width: 900px; margin: 0 auto;
+  width: 100%; max-width: 800px; margin: 0 auto;
   padding: 30px; display: flex; flex-direction: column; gap: 30px;
 }
 
