@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
-import { Trash2, MousePointerClick, ChevronRight } from 'lucide-vue-next';
+import { Trash2, MousePointerClick, ChevronRight, FileEdit } from 'lucide-vue-next';
+import ContentEditorModal from '../modals/ContentEditorModal.vue';
 
 const store = useProjectStore();
 
@@ -10,6 +11,8 @@ const activeNode = computed(() => store.activeNode);
 
 // Estado para controlar quais categorias estão abertas na lista
 const expandedCategories = ref<Set<string>>(new Set());
+
+const showEditor = ref(false); 
 
 // Alterna o estado de expansão de uma categoria
 const toggleCategory = (catId: string) => {
@@ -118,12 +121,15 @@ watch(() => activeNode.value?.id, () => {
         <!-- Campo Conteúdo -->
         <div class="form-group">
           <label>Conteúdo</label>
-          <textarea 
-            v-model="activeNode.content" 
-            rows="8" 
-            placeholder="Escreva aqui o conteúdo..."
-          ></textarea>
-          <small>Aceita Markdown simples.</small>
+          <div class="content-actions">
+            <p class="help-text">
+              O conteúdo é editado em tela cheia para melhor foco.
+            </p>
+            <button class="btn-open-editor" @click="showEditor = true">
+              <FileEdit class="icon-btn" />
+              Editar Conteúdo
+            </button>
+          </div>
         </div>
 
         <!-- Lista de Conexões (Novo Layout) -->
@@ -174,6 +180,14 @@ watch(() => activeNode.value?.id, () => {
         </div>
       </div>
     </div>
+
+    <ContentEditorModal 
+      v-if="showEditor && activeNode"
+      :node-id="activeNode.id"
+      :node-title="activeNode.title"
+      @close="showEditor = false"
+    />
+
   </div>
 </template>
 
@@ -371,4 +385,36 @@ small, .hint {
   text-transform: none;
   letter-spacing: normal;
 }
+
+/* Estilos do Botão de Conteúdo */
+.content-actions {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.help-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0 0 12px 0;
+}
+
+.btn-open-editor {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: white; border: 1px solid #cbd5e1;
+  padding: 10px; border-radius: 6px;
+  color: #334155; font-weight: 600; cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-open-editor:hover {
+  border-color: #3b82f6; color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.icon-btn { width: 18px; height: 18px; }
 </style>

@@ -13,7 +13,9 @@
   "dependencies": {
     "@vueuse/core": "^14.2.1",
     "cytoscape": "^3.33.1",
+    "jszip": "^3.10.1",
     "lucide-vue-next": "^0.575.0",
+    "markdown-it": "^14.1.1",
     "pinia": "^3.0.4",
     "sass": "^1.97.3",
     "uuid": "^13.0.0",
@@ -22,6 +24,8 @@
   },
   "devDependencies": {
     "@types/cytoscape": "^3.21.9",
+    "@types/jszip": "^3.4.0",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.10.1",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-vue": "^6.0.2",

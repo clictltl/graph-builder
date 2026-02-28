@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
 import Navigation from '../components/Navigation.vue';
 import GraphCanvas from '../components/GraphCanvas.vue';
 import ReferencesPanel from '../components/ReferencesPanel.vue';
 import { Maximize2, Minimize2 } from 'lucide-vue-next';
+import MarkdownRenderer from '@/shared/components/ui/MarkdownRenderer.vue';
 
 const store = useProjectStore();
 
@@ -19,13 +20,26 @@ const activeNode = computed(() => {
   return null;
 });
 
+const activeNodeContent = computed(() => {
+  if (!activeNode.value) return '';
+  return store.getNodeContent(activeNode.value.id);
+});
+
 const isEmpty = computed(() => store.project.nodes.length === 0);
+
+const contentAreaRef = ref<HTMLElement | null>(null);
 
 // Resetar ao mudar de nó (opcional, mas bom para UX)
 watch(activeNode, (newVal) => {
   if (newVal) {
     graphDepth.value = 1; // Volta ao foco local
     isGraphExpanded.value = false; // Sai do modo tela cheia se mudar de nó
+
+    nextTick(() => {
+      if (contentAreaRef.value) {
+        contentAreaRef.value.scrollTop = 0;
+      }
+    });
   }
 });
 </script>
@@ -36,7 +50,7 @@ watch(activeNode, (newVal) => {
     <Navigation />
 
     <!-- COLUNA 2: Conteúdo Central -->
-    <main class="content-area">
+    <main class="content-area" ref="contentAreaRef">
       
       <!-- CASO 1: Vazio -->
       <div v-if="isEmpty" class="empty-msg">
@@ -102,7 +116,10 @@ watch(activeNode, (newVal) => {
         <article class="markdown-body">
           <h1 class="node-title">{{ activeNode.title }}</h1>
           <div class="node-content">
-            <div v-if="activeNode.content" style="white-space: pre-wrap;">{{ activeNode.content }}</div>
+            <MarkdownRenderer 
+              v-if="activeNodeContent" 
+              :source="activeNodeContent" 
+            />
             <p v-else class="no-content">Sem conteúdo escrito.</p>
           </div>
         </article>

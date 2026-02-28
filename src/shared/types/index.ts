@@ -5,13 +5,18 @@
 export type AssetSource = 'local' | 'remote';
 
 export interface Asset {
-  id: string;          // UUID
-  type: string;        // Mime-type (ex: image/jpeg)
+  id: string;
+  type: string;         // Ex: 'image/png' ou 'text/markdown'
   originalName: string;
-  source: AssetSource; // 'local' (blob em memória) ou 'remote' (URL do WP)
-  url?: string;        // URL final (se remote)
-  blobUrl?: string;    // URL temporária para preview (se local)
-  file?: File;         // O arquivo binário (apenas durante edição local)
+  source: AssetSource;
+  
+  url?: string;         // WP URL
+  wpId?: number;
+  
+  blobUrl?: string;     // Preview de imagens locais
+  file?: File;          // Arquivo binário (para exportação)
+  
+  textContent?: string; // Cache de conteúdo de texto (para não precisar ler Blob toda hora) 
 }
 
 /**
@@ -33,14 +38,10 @@ export interface Category {
  */
 export interface Node {
   id: string;
-  categoryId: string;  // FK: Pertence a uma categoria
+  categoryId: string;
   title: string;
-  content: string;     // Markdown / HTML
+  contentAssetId?: string; 
   order: number;
-  
-  // Posição visual (x, y) é opcional pois só existe no Preview/Grafo.
-  // No Editor, a posição é automática baseada na lista.
-  position?: { x: number; y: number }; 
 }
 
 /**
@@ -66,5 +67,5 @@ export interface GraphProject {
   categories: Category[];
   nodes: Node[];
   edges: Edge[];
-  assets: Record<string, Asset>; // Dicionário { id: Asset }
+  assets: Record<string, Asset>;
 }

@@ -40,19 +40,19 @@
           <div class="menu-label">Local (PC)</div>
           
           <div class="menu-item" @click="handleMenuClick(triggerFileInput)">
-            <FolderInput class="icon-menu" /> Importar JSON
+            <FolderInput class="icon-menu" /> Importar Projeto
           </div>
           <!-- Input invisível para upload -->
           <input 
             type="file" 
             ref="fileInput" 
-            accept=".json" 
+            accept=".zip,.json"
             style="display: none" 
             @change="handleImport"
           />
 
           <div class="menu-item" @click="handleMenuClick(handleExport)">
-            <Download class="icon-menu" /> Exportar JSON
+            <Download class="icon-menu" /> Exportar Projeto
           </div>
         </div>
 
@@ -65,7 +65,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useProjectStore } from '@/shared/stores/projectStore';
 import { useToast } from '@/shared/composables/useToast';
-import { exportToJSON, parseJSONFile } from '@/editor/utils/localProjectIO';
+import { exportToZIP, importProjectFile } from '@/editor/utils/localProjectIO';
 import { 
   ChevronDown, 
   FileText, 
@@ -109,7 +109,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 function handleExport() {
   try {
     const name = store.project.meta.name || 'projeto';
-    exportToJSON(store.project, name);
+    exportToZIP(store.project, name);
     toast.success('Projeto exportado com sucesso!');
   } catch (error) {
     console.error(error);
@@ -128,12 +128,12 @@ async function handleImport(event: Event) {
   if (!file) return;
 
   try {
-    const loadedProject = await parseJSONFile(file);
+    const loadedProject = await importProjectFile(file);
     store.loadProject(loadedProject);
-    toast.success('Projeto carregado!');
+    toast.success('Projeto carregado com sucesso!');
   } catch (err: any) {
     console.error(err);
-    toast.error('Erro ao ler arquivo.');
+    toast.error('Erro ao importar arquivo.');
   }
 }
 </script>
